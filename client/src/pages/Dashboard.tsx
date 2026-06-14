@@ -8,8 +8,7 @@ import {
     TrendingUpIcon
 } from "lucide-react"
 import { useEffect, useState } from "react"
-import { dummyAccountsData, dummyActivityData, dummyPostsData } from "../assets/assets"
-
+import { dummyAccountsData, dummyActivityData, dummyPostsData } from "../assets/assets";
 const Dashboard = () => {
 
     const [stat, setStat] = useState({ scheduled: 0, published: 0, connectedAccounts: 0 })
