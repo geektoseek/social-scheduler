@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { dummyAccountsData, dummyPostsData, PLATFORMS } from "../assets/assets";
+import { ArrowRightIcon, CalendarDaysIcon, CalendarIcon, CalendarRangeIcon, ClockIcon, SendIcon, XIcon } from "lucide-react";
 
 const Schedular = () => {
 
@@ -11,12 +12,10 @@ const Schedular = () => {
     const [mediaFile, setMediaFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     const fetchPosts = async () => {
-        setPosts(dummyAccountsData)
+        setPosts(dummyPostsData)
     }
     useEffect(() => {
         (async () => await fetchPosts())()
-        const interval = setInterval(async () => await fetchPosts(), 1000)
-        return () => clearInterval(interval)
     }, [])
 
     const scheduled = posts.filter((p) => p.status === "scheduled")
@@ -25,10 +24,30 @@ const Schedular = () => {
 
     const handleSchedule = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!content.trim() || selectedPlatforms.length === 0 || !scheduledDate || !scheduledTime) {
+            alert("Please fill all required fields");
+            return;
+        }
         setLoading(true);
         setTimeout(() => {
+            const newPost = {
+                _id: Date.now().toString(),
+                user: "69fd96aea59dd584d3587a1d",
+                content: content,
+                platforms: selectedPlatforms,
+                scheduledFor: new Date(`${scheduledDate}T${scheduledTime}`).toISOString(),
+                status: "published",
+                mediaType: mediaFile ? (mediaFile.type.startsWith("image/") ? "image" : "video") : undefined,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            }
+            setPosts((prev) => [...prev, newPost])
             setLoading(false)
-            setPosts((prev) => [...prev, dummyPostsData[0]])
+            setContent("")
+            setScheduledDate("")
+            setScheduledTime("")
+            setSelectedPlatforms([])
+            setMediaFile(null)
         }, 100)
     }
 
@@ -64,19 +83,166 @@ const Schedular = () => {
                         </div>
 
                         {/* Content */}
-
+                        <div>
+                            <label className="block text-xs text-slate-500 uppercase mb-2">Content</label>
+                            <textarea required rows={5} placeholder="What do you want to share today?"
+                                className="w-full px-5  py-4 bg-slate-50 border-slate-200 rounded-2xl text-slate-900 text-sm placeholder-slate-400 outline-none resize-none"
+                                value={content}
+                                onChange={(e) => setContent(e.target.value)}
+                            />
+                            <div className={`text-right text-xs mt-1 font-medium ${content.length > 270 ? "text-red-500" : "text-slate-400"}`} >
+                                {content.length}/280
+                            </div>
+                        </div>
 
                         {/* Media Upload */}
+                        <div>
+                            <label className="block text-xs text-slate-500 uppercase mb-2">Media (Optional)</label>
+                            {mediaFile ? (
+                                <div className="relative  rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                                    {mediaFile.type.startsWith("image/")
+                                        ?
+                                        <img src={URL.createObjectURL(mediaFile)} alt="preview"
+                                            className="w-full h-40 object-cover" />
+                                        :
+                                        <video src={URL.createObjectURL(mediaFile)}
+                                            className="w-full h-40 object-cover" controls
+                                        />}
+                                    <button type="button" onClick={() => setMediaFile(null)} className="absolute top-2 right-2 size-7 bg-slate-900/60 hover:bg-slate-900/80 text-white rounded-full  flex items-center justify-center transition-colors">
+                                        <XIcon className="size-3.5" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <label className="flex items-center justify-center gap-2 p-5 py-10 rounded-xl  border-2 border-dashed border-slate-200 cursor-pointer hover:border-red-300 hover:bg-red-50/30 transition-all group">
+                                    <span>Click to upload image or video</span>
+                                    <input type="file" accept="image/*,video/*" className="hidden" onChange={(e) => e.target.files?.[0] && setMediaFile(e.target.files[0])}
 
+                                    />
+                                </label>
+                            )}
+                        </div>
 
                         {/* Date & Time */}
-
-
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-xs  text-slate-500 uppercase mb-2">
+                                    Date
+                                </label>
+                                <div className="relative">
+                                    <CalendarIcon className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                    <input type="date" required className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-slate-200 rounded-lg text-slate-900 text-sm outline-none " value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs  text-slate-500 uppercase mb-2">
+                                    Date
+                                </label>
+                                <div className="relative">
+                                    <ClockIcon className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                    <input type="time" required className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-slate-200 rounded-lg text-slate-900 text-sm outline-none " value={scheduledTime} onChange={(e) => setScheduledTime(e.target.value)} />
+                                </div>
+                            </div>
+                        </div>
                         {/* Submit Button */}
+                        <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 py-3.5 bg-red-500 hover:bg-red-600 transition-all text-white rounded-lg">
+                            {loading ? (
+                                <>
+                                    <div className="size-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    Scheduling
+                                </>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    Schedule Post
+                                    <ArrowRightIcon className="size-4" />
+                                </div>
+                            )}
+                        </button>
                     </form>
                 </div>
             </div>
             {/* Queue Panel */}
+
+            <div className="flex flex-1 flex-col gap-6 min-w-0">
+                {/* Upcoming  */}
+                <div className="bg-white rounded-2xl border-slate-200 border overflow-hidden">
+                    <div className="flex items-center gap-2.5 px-5 py-4 border-b border-slate-100">
+                        <CalendarDaysIcon />
+                        <h3 className="text-slate-900 text-sm">Upcoming</h3>
+                        <span className="ml-auto  text-xs font-bold  bg-zinc-100 text-zinc-700 px-2 py-0.5 rounded-full">{scheduled.length}</span>
+                    </div>
+                    <div className="max-h-72 overflow-y-auto divide-y divide-slate-50">
+                        {scheduled.length === 0 ? (
+                            <div className="p-10 text-center text-slate-400 text-sm">
+                                No posts scheduled yet
+                            </div>
+                        ) : (
+                            scheduled.map((post) => (
+                                <div key={post._id} className="px-5 py-4 hover-bg-slate-50/60 transition-colors">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div>
+                                            {post.platforms.map((pl: string) => {
+                                                const meta = PLATFORMS.find((p) => p.id === pl);
+                                                return meta ? <meta.icon key={pl} className="size-3.5 text-slate-400" /> : null
+                                            })}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {post.mediaType && <span className="text-xs bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0/5 rounded-md font-semibold capitalize">{post.mediaType}</span>}
+                                            <span className="text-xs text-slate-400">
+                                                {new Date(post.scheduledFor).toLocaleString()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-slate-500  line-clamp-2 max-w-md">{post.content}</p>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+
+
+                {/* Publish Post */}
+
+                <div className="bg-white rounded-2xl border-slate-200 border overflow-hidden">
+                    <div className="flex items-center gap-2.5 px-5 py-4 border-b border-slate-100">
+                        <SendIcon />
+                        <h3 className="text-slate-900 text-sm">Published</h3>
+                        <span className="ml-auto  text-xs font-bold  bg-zinc-100 text-zinc-700 px-2 py-0.5 rounded-full">{published.length}</span>
+                    </div>
+                    <div className="max-h-72 overflow-y-auto divide-y divide-slate-50">
+                        {published.length === 0 ? (
+                            <div className="p-10 text-center text-slate-400 text-sm">
+                                No posts published yet
+                            </div>
+                        ) : (
+                            published.map((post) => (
+                                <div key={post._id} className="px-5 py-4 hover-bg-slate-50/60 transition-colors">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div>
+                                            {post.platforms.map((pl: string) => {
+                                                const meta = PLATFORMS.find((p) => p.id === pl);
+                                                return meta ? <meta.icon key={pl} className="size-3.5 text-slate-400" /> : null
+                                            })}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {post.mediaType && <span className="text-xs bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0/5 rounded-md font-semibold capitalize">{post.mediaType}</span>}
+                                            <span className="text-xs text-slate-400">
+                                                {new Date(post.updatedAt).toLocaleString()}
+                                            </span>
+                                            <span>Published</span>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-slate-500  line-clamp-2 max-w-4/5">{post.content}</p>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+
+
+
+            </div>
+
+
         </div>
     )
 }
