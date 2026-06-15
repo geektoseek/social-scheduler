@@ -5,6 +5,7 @@ import { brotliDecompressSync } from "node:zlib";
 import { json } from "node:stream/consumers";
 import { url } from "node:inspector";
 import { Account } from "../models/account.js";
+import { AuthRequest } from "../middlewares/authMiddelwares.js";
 // Helper to ensure user has a Zernio Profile.
 const getOrCreateZernioProfile = async (user: any): Promise<string> => {
     try {
@@ -34,7 +35,7 @@ const getOrCreateZernioProfile = async (user: any): Promise<string> => {
 }
 // Generate OAuth authorization URL
 // GET /api/auth/:platform
-export const generateAuthUrl = async (req: Request, res: Response): Promise<void> => {
+export const generateAuthUrl = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { platform } = req.params;
         const profileId = await getOrCreateZernioProfile(req.user);
@@ -68,7 +69,7 @@ export const generateAuthUrl = async (req: Request, res: Response): Promise<void
 //  GET /api/auth/sync
 
 
-export const syncAccounts = async (req: Request, res: Response): Promise<void> => {
+export const syncAccounts = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const profileId = await getOrCreateZernioProfile(req.user);
         const result = await zernio.accounts.listAccounts({
@@ -92,16 +93,24 @@ export const syncAccounts = async (req: Request, res: Response): Promise<void> =
                 continue;
             }
             const account = await Account.findOneAndUpdate(
-                { zernioAccountId: zid },
+                {
+                    zernioAccountId:
+                        zid
+                },
                 {
                     user: req.user._id,
                     platform: normalizedPlatform,
-                    handle: zAccount.userName || zAccount.name || zAccount.handle || "unkown",
+                    handle: zAccount.username || zAccount.name || zAccount.handle || "Unknown",
                     zernioAccountId: zid,
-                    status: "connected"
-                }
+                    status: "connected",
+                    avatarUrl: zAccount.avatarUrl || zAccount.picture || zAccount.profile_image_url,
+                },
+                { upsert: true, returnDocument: 'after' }
             )
+            syncedAccounts.push(account)
         }
-    } catch (error) {
+        res.json(syncedAccounts)
+    } catch (error: any) {
+        res.status(500).json({ message: error?.message || "Server error" });
     }
 }
